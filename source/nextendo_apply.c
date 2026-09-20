@@ -199,6 +199,7 @@ char *nextendo_hosts_build(const char *ip) {
     snprintf(line, sizeof(line), "%s bcat-list-lp1.cdn.nintendo.net\n", ip);   EMIT_H(line);
     snprintf(line, sizeof(line), "%s bcat-data-lp1.cdn.nintendo.net\n", ip);   EMIT_H(line);
     snprintf(line, sizeof(line), "%s bcat-topics-lp1.cdn.nintendo.net\n", ip); EMIT_H(line);
+    snprintf(line, sizeof(line), "%s    *.demonware.net\n", ip);              EMIT_H(line);
 
     // --- Demonware (Crash Team Racing: Nitro-Fueled, Diablo III) ---
     // Ces jeux utilisent l'infrastructure Demonware (Activision/Blizzard) et non les serveurs Nintendo.
