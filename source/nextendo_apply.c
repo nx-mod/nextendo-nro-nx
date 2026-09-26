@@ -114,16 +114,24 @@ char *nextendo_hosts_build(const char *ip) {
     snprintf(line, sizeof(line), "%s e0d67c509fb203858ebcb2fe3f88c2aa.baas.nintendo.com\n", ip); EMIT_H(line);
     snprintf(line, sizeof(line), "%s cdn-image-e0d67c509fb203858ebcb2fe3f88c2aa.baas.nintendo.com\n", ip); EMIT_H(line);
     snprintf(line, sizeof(line), "%s capi.lp1.op2.nintendo.net\n", ip);  EMIT_H(line);
-    snprintf(line, sizeof(line), "%s storage.hac.lp1.scsi.srv.nintendo.net\n", ip); EMIT_H(line);
-    snprintf(line, sizeof(line), "%s val.hac.penne.srv.nintendo.net\n", ip);  EMIT_H(line);
-    snprintf(line, sizeof(line), "%s god.hac.lp1.penne.srv.nintendo.net\n", ip); EMIT_H(line);
-    snprintf(line, sizeof(line), "%s dauth-lp1.ndas.srv.nintendo.net\n", ip);    EMIT_H(line);
-    snprintf(line, sizeof(line), "%s aauth.hac.lp1.ndas.srv.nintendo.net\n", ip); EMIT_H(line);
     // *.srv.nintendo.net et *srv.nintendo.net (sans point) etaient dans v2.0.9/v2.1.0
     // et couvraient TOUS les jeux. Le deuxieme pattern (*srv) matche les hotes multi-label
     // comme g2b309e01-lp1.s.n.srv.nintendo.net que le premier (*.srv) ne couvre pas.
     snprintf(line, sizeof(line), "%s    *.srv.nintendo.net\n", ip);       EMIT_H(line);
     snprintf(line, sizeof(line), "%s    *srv.nintendo.net\n", ip);        EMIT_H(line);
+
+    /* These five must stay BELOW the two wildcards above. DNS.mitm keeps the
+     * last matching line (dnsmitm_host_redirection.cpp inserts each parsed line
+     * at the front of its list and returns the first match), which is why the
+     * MK8 override further down is deliberately placed after g2*. These were
+     * above the wildcards, so *.srv.nintendo.net silenced all five - harmless
+     * only while both carried the same address, and a trap the moment one of
+     * them needs a different server, exactly as MK8 already does. */
+    snprintf(line, sizeof(line), "%s storage.hac.lp1.scsi.srv.nintendo.net\n", ip); EMIT_H(line);
+    snprintf(line, sizeof(line), "%s val.hac.penne.srv.nintendo.net\n", ip);  EMIT_H(line);
+    snprintf(line, sizeof(line), "%s god.hac.lp1.penne.srv.nintendo.net\n", ip); EMIT_H(line);
+    snprintf(line, sizeof(line), "%s dauth-lp1.ndas.srv.nintendo.net\n", ip);    EMIT_H(line);
+    snprintf(line, sizeof(line), "%s aauth.hac.lp1.ndas.srv.nintendo.net\n", ip); EMIT_H(line);
     // Wildcard g2* couvre TOUS les secure-servers NEX. En plus, on ajoute les
     // hotes EXPLICITES de chaque jeu au cas ou le wildcard ne matche pas dans
     // Atmosphere (le * mid-label peut etre ignore sur certains builds).
