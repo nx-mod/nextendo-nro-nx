@@ -135,8 +135,8 @@ typedef enum {
     STR_LANG_B_BACK,            // "B: Back"
 
     // --- Server switch toast ---
-    STR_TOAST_SERVER_DEFAULT,   // "Servidor: VPS (51.178.29.194)"
-    STR_TOAST_SERVER_ALT,       // "Servidor: Local (3.135.232.168)"
+    STR_TOAST_SERVER_DEFAULT,   // "Servidor: ZeroTier (10.214.216.58)"
+    STR_TOAST_SERVER_ALT,       // "Servidor: VPS (51.178.29.194)"
 
     // --- Flag bar (picker screen) ---
     STR_FLAG_BAR,               // "MK8D   -   Country Flag"

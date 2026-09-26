@@ -397,16 +397,16 @@ static const char *s_strings[STR_COUNT][5] = {
                                    "B: 取消" },
 
     // --- Server switch toast ---
-    [STR_TOAST_SERVER_DEFAULT] = { "Server: VPS (51.178.29.194)",
+    [STR_TOAST_SERVER_DEFAULT] = { "Server: ZeroTier (10.214.216.58)",
+                                   "Servidor: ZeroTier (10.214.216.58)",
+                                   "Servidor: ZeroTier (10.214.216.58)",
+                                   "Serveur : ZeroTier (10.214.216.58)",
+                                   "服务器: ZeroTier (10.214.216.58)" },
+    [STR_TOAST_SERVER_ALT]     = { "Server: VPS (51.178.29.194)",
                                    "Servidor: VPS (51.178.29.194)",
                                    "Servidor: VPS (51.178.29.194)",
                                    "Serveur : VPS (51.178.29.194)",
                                    "服务器: VPS (51.178.29.194)" },
-    [STR_TOAST_SERVER_ALT]     = { "Server: Local (3.135.232.168)",
-                                   "Servidor: Local (3.135.232.168)",
-                                   "Servidor: Local (3.135.232.168)",
-                                   "Serveur : Local (3.135.232.168)",
-                                   "服务器: Local (3.135.232.168)" },
 
     // --- Flag bar ---
     [STR_FLAG_BAR]      = { "MK8D   -   Country Flag",

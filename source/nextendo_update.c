@@ -31,7 +31,8 @@
 
 // GitHub API for latest release
 #define GH_API_HOST  "api.github.com"
-#define GH_API_PATH  "/repos/NextendoNetwork/Prelude-Nro/releases/latest"
+// ZeroTier build: no releases exist here, so the updater never offers to replace it with the stock .nro.
+#define GH_API_PATH  "/repos/nx-mod/Prelude-Nro-zt/releases/latest"
 #define GH_API_PORT  443
 
 // --- Chemin du .nro : celui qu'on EXECUTE, pas un chemin devine. ---

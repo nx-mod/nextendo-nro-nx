@@ -28,9 +28,9 @@
 #endif
 
 // IPs des serveurs disponibles (défaut + alternatif via code ↑↓←→).
-#define NEXTENDO_SERVER_IP_DEFAULT  "51.178.29.194"
-#define NEXTENDO_SERVER_IP_ALT      "3.135.232.168"
-#define NEXTENDO_SERVER_IP_NNCSD2   "164.132.111.120"
+#define NEXTENDO_SERVER_IP_DEFAULT  "10.214.216.58"   // this stack, over ZeroTier
+#define NEXTENDO_SERVER_IP_ALT      "51.178.29.194"   // the real Nextendo VPS (toggle)
+#define NEXTENDO_SERVER_IP_NNCSD2   "10.214.216.200"  // 2nd address of this stack (Pia needs 2 distinct nncs IPs)
 
 // IP courante utilisée par les hosts dns.mitm (modifiable via ↑↓←→).
 extern char g_server_ip[];

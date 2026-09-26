@@ -40,8 +40,8 @@
 char g_server_ip[NEXTENDO_SERVER_IP_MAX] = NEXTENDO_SERVER_IP_DEFAULT;
 
 const char *server_display_name(void) {
-    if (strcmp(g_server_ip, NEXTENDO_SERVER_IP_DEFAULT) == 0) return "VPS (51.178.29.194)";
-    if (strcmp(g_server_ip, NEXTENDO_SERVER_IP_ALT) == 0)     return "Local (3.135.232.168)";
+    if (strcmp(g_server_ip, NEXTENDO_SERVER_IP_DEFAULT) == 0) return "ZeroTier (10.214.216.58)";
+    if (strcmp(g_server_ip, NEXTENDO_SERVER_IP_ALT) == 0)     return "VPS (51.178.29.194)";
     return g_server_ip;
 }
 
@@ -136,9 +136,9 @@ char *nextendo_hosts_build(const char *ip) {
     // hotes EXPLICITES de chaque jeu au cas ou le wildcard ne matche pas dans
     // Atmosphere (le * mid-label peut etre ignore sur certains builds).
     snprintf(line, sizeof(line), "%s g2*.s.n.srv.nintendo.net\n", ip);         EMIT_H(line);
-    // MK8 -> production (164) : les joueurs y sont ; le VPS dev n'a pas de joueurs.
+    // MK8 : ce stack le sert aussi (g2b309e01 -> BACKEND_MK8), donc la meme IP que les autres.
     // Doit rester APRES le wildcard g2* : "derniere ligne qui matche gagne".
-    snprintf(line, sizeof(line), "%s g2b309e01-lp1.s.n.srv.nintendo.net\n", NEXTENDO_SERVER_IP_NNCSD2); EMIT_H(line); // MK8 -> 164
+    snprintf(line, sizeof(line), "%s g2b309e01-lp1.s.n.srv.nintendo.net\n", ip); EMIT_H(line); // MK8: served by this stack too
     snprintf(line, sizeof(line), "%s g23380901-lp1.s.n.srv.nintendo.net\n", ip); EMIT_H(line); // SSBU
     snprintf(line, sizeof(line), "%s g2ee2e300-lp1.s.n.srv.nintendo.net\n", ip); EMIT_H(line); // ACNH
     snprintf(line, sizeof(line), "%s g26cfaf00-lp1.s.n.srv.nintendo.net\n", ip); EMIT_H(line); // Strikers
@@ -943,7 +943,7 @@ void nextendo_diag_network(void) {
             memset(&sa, 0, sizeof(sa));
             sa.sin_family = AF_INET;
             sa.sin_port = htons(10025);
-            sa.sin_addr.s_addr = inet_addr("164.132.111.120");
+            sa.sin_addr.s_addr = inet_addr(NEXTENDO_SERVER_IP_NNCSD2);
             int rc = connect(fd, (struct sockaddr *)&sa, sizeof(sa));
             close(fd);
             snprintf(buf, sizeof(buf), "36 diag: nncs2:10025 (UDP) -> %s", rc == 0 ? "socket ok" : "socket echec");
@@ -959,7 +959,7 @@ void nextendo_diag_network(void) {
             memset(&sa, 0, sizeof(sa));
             sa.sin_family = AF_INET;
             sa.sin_port = htons(10125);
-            sa.sin_addr.s_addr = inet_addr("164.132.111.120");
+            sa.sin_addr.s_addr = inet_addr(NEXTENDO_SERVER_IP_NNCSD2);
             int rc = connect(fd, (struct sockaddr *)&sa, sizeof(sa));
             close(fd);
             snprintf(buf, sizeof(buf), "37 diag: nncs2:10125 (UDP) -> %s", rc == 0 ? "socket ok" : "socket echec");
