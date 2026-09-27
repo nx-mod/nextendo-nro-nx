@@ -1,126 +1,91 @@
-# Prelude
+# nextendo-nx
 
-**Prelude** is the Nintendo Switch homebrew that switches your console between the
+**nextendo-nx** is the Nintendo Switch homebrew that flips your console between the
 [Nextendo Network](https://nextendo.network) and Nintendo's official servers.
 
-It is a small `.nro` you run from the homebrew menu. You pick a mode, it applies the change and
-reboots. Nothing is permanent: you can switch back whenever you want.
+It is a small `.nro` you run from the homebrew menu. Pick a mode, it applies the
+change and reboots. Nothing is permanent — switch back whenever you want.
 
 ```
         Which network do you want to load?
         [ NEXTENDO ]     [ NINTENDO ]
 ```
 
-- **Nextendo mode**: redirects Nintendo traffic to the Nextendo servers and provisions everything
-  the console needs to trust them.
-- **Nintendo mode**: removes every component Prelude installed and hands the console back to
-  Nintendo, with Atmosphère's own telemetry blocking restored.
+This is the trimmed, restructured successor to **Prelude**, rewritten on the
+[Aether](https://github.com/tallbl0nde/Aether) GUI library (the one TriPlayer
+uses). Where Prelude bundled ~14 MB of per-game mods, BCAT data and patches in the
+`.nro`, nextendo-nx ships almost none of it: the network now delivers that.
 
-## Features
+## What it does
 
-### A complete settings app
+- **Nextendo mode**: writes the Atmosphère DNS.mitm hosts that redirect Nintendo
+  traffic to the Nextendo servers, enables `enable_dns_mitm`, provisions the
+  certificate-trust patch set, and (on emuMMC) serves the real device cert —
+  confined by DNS.mitm, so your identity never leaks to Nintendo.
+- **Nintendo mode**: removes every host redirect and the cert-trust stack,
+  restores your own `default.txt` if it backed one up, blanks emuMMC PRODINFO, and
+  restores Atmosphère's native telemetry blocking.
 
-- Follows the console's system theme (HOME menu / Settings look, including light/dark mode).
-- In-app language selection: English, Español, Português, Français, 中文.
-- Background music, decoded with mpg123: no SDL2, the `.nro` is ~35% smaller than before.
-- **Self-updating**: checks GitHub releases at launch and can download and replace the `.nro` it is
-  running from (any SD path, not just `/switch/`). Stale bundled mods (see below) are detected and
-  offered as an update too.
-
-### Online games, out of the box
-
-One switch to Nextendo mode and these are configured with the proper hosts and patches:
-
-- **Mario Kart 8 Deluxe**: NEX secure-server routed to the production machine, plus a **country
-  flag installer** (110 flags) that builds the ExeFS patch locally, no download needed.
-- **Super Smash Bros. Ultimate**: optional **SSBU Online Deluxe quickplay mod** (L button),
-  bundled in the `.nro` with its full dependency stack (ARCropolis, smashline, Skyline plugins...)
-  and a toggle for the mod's own overclock if you already run sys-clk / Horizon OC.
-- **Splatoon 2**: BCAT online schedule installer via LayeredFS (no save-data tricks, no network
-  needed at install time).
-- **Splatoon 3**: NPLN (gRPC/HTTP2) hosts plus the certificate ExeFS patches required by the
-  game's bundled BoringSSL, with a dedicated **status screen** showing whether the installed
-  patches match the ones this build ships and what to do after a game update.
-- **Super Mario Bros. 35**: official BCAT event installer **plus an optional Special Battle**
-  (27 merged events, 119 queues), installed on demand because its ExeFS patch *replaces* the normal
-  35-player battle instead of adding to it.
-- **Super Mario Bros. Wonder**: ExeFS patches (certificate + peer name) shipped for everyone;
-  harmless if you don't own the game (Atmosphère matches by build ID).
-- **Metal Gear Solid: Peace Walker**: ExeFS patches (certificate bypass in `mgspwcertbypass/`)
-  deployed automatically under Nextendo mode.
-- **Crash Team Racing: Nitro-Fueled**: ExeFS patches (`dwctrfriendlookup/` and `dwctrtrustcertbypass/`)
-  deployed automatically under Nextendo mode, with Demonware DNS redirection (`*.demonware.net`).
-- **Diablo III: Eternal Collection**: Demonware hosts redirection configured for private servers
-  (no ExeFS patches required).
-- **Nintendo Account Link fallback**: targeted `ssl:s` Client-PKI fallback (`network_mitm` v2)
-  for blanked PRODINFO / emuMMC consoles, allowing account linking on Nextendo without error `0x167B`.
-- Explicit per-game NEX entries for Mario Tennis Aces, ARMS, Luigi's Mansion 3, Animal Crossing
-  and Strikers, on top of the `g2*` wildcard.
-
-### Privacy & reversibility
-
-- Telemetry blocked **in both modes** (Atmosphère's native defaults are merged, not replaced).
-- Nintendo mode removes the whole certificate-trust stack (CA bundle, `disable_ca_verification`,
-  `rootCA.pem`) and purges the logs that could leak the server IP: no `.bak`, no debug logs.
-- PRODINFO handled per mode: real device certificate under Nextendo (confined by DNS.mitm),
-  blanked identity under Nintendo on emuMMC, never touched on sysNAND; and the UI tells you
-  plainly what that means for your console type.
-- Your own `hosts` files are offered a one-time backup before Prelude writes over them.
+Telemetry is blocked in **both** modes.
 
 ## How it works
 
-Prelude does not patch games and does not touch the network stack. It writes configuration that
-Atmosphère already understands, then reboots so the changes take effect:
+nextendo-nx does not patch games and does not touch the network stack. It writes
+configuration Atmosphère already reads at boot, then reboots:
 
 | What | Where |
 | --- | --- |
-| Host redirections | `/atmosphere/hosts/{sysmmc,emummc}.txt` (Atmosphère DNS.mitm) |
+| Host redirections | `/atmosphere/hosts/{sysmmc,emummc,default}.txt` |
 | DNS.mitm on/off | `/atmosphere/config/system_settings.ini` |
 | PRODINFO per mode | `/exosphere.ini` (emuMMC only) |
-| Certificate trust | `exefs_patches/`, `nro_patches/`, browser CA bundle |
-| Game content (BCAT, mods, flags) | `/atmosphere/contents/` and `exefs_patches/` on the SD |
+| Certificate trust | `exefs_patches/`, `nro_patches/`, CA bundle (`romfs/sd`) |
 
-Because it only writes files Atmosphère reads at boot, everything it does is reversible by
-switching modes, or by deleting those files by hand.
+Everything it does is reversible by switching modes or deleting those files.
+
+## Why the trim
+
+Most of what old Prelude bundled is now handled by the rest of the network:
+
+- **BCAT content** (Splatoon 2/3, SMB35 events) → served by `nextendo-bcat-nx`.
+- **NEX/DataStore games** (MK8, SSBU, ACNH…) → just need the host redirect.
+- **System services** (app-auth, version list, push) → `nextendo-aauth-nx`,
+  `nextendo-tagaya-nx`, `nextendo-npns-nx`.
+
+So the app keeps only the irreducible core — flip the redirect, manage cert trust,
+stay reversible — and hands the content to the servers. See
+[`RESTRUCTURE.md`](RESTRUCTURE.md) for the full trim rationale and
+[`NOTES.md`](NOTES.md) for build status.
+
+The addresses it redirects to live in `include/nextendo/config.hpp` and the host
+list in `source/core/hosts.cpp` — that is the whole configuration surface.
 
 ## Building
 
-There is no local toolchain requirement beyond Docker:
+Requires devkitPro + Aether. See [`NOTES.md`](NOTES.md). In short:
 
 ```sh
-docker run --rm -v "$PWD:/work" -w /work devkitpro/devkita64 \
-  bash -c 'dkp-pacman -Syu --noconfirm switch-freetype switch-mpg123 && make -j$(nproc)'
+git submodule update --init --recursive
+make -C lib/Aether
+make -j$(nproc)          # -> nextendo-nx.nro
 ```
 
-The result is `nextendo.nro`. Copy it to `/switch/` on your SD card. Releases are also built
-automatically by the GitHub Actions workflow, which attaches the `.nro` to every tagged release.
+> **Status:** this is the Aether rewrite in progress; the C++ has been reviewed
+> but not yet compiled on a real toolchain. `NOTES.md` lists the first-build
+> checklist.
 
-Version numbers are kept in lockstep: `APP_VERSION` in the `Makefile` is `X.Y.Z`, the update
-checker compares full semver, and the GitHub tag is `vX.Y.Z`.
+## Credits / sources
 
-## Status
-
-**Prelude is actively developed**: new releases land roughly weekly (see
-[Releases](https://github.com/NextendoNetwork/Prelude-Nro/releases)), and the bundled game patches
-are kept in sync with game and Atmosphère updates. Issues and pull requests are welcome; note that
-the project started as an internal tool and release notes are sometimes written in French.
-
-If you are running your own server, the addresses Prelude redirects to live in
-`source/nextendo_hosts.h`: that file is the whole configuration surface.
+- **Aether** — [tallbl0nde/Aether](https://github.com/tallbl0nde/Aether), the GUI
+  library TriPlayer is built on.
+- **Atmosphère** — DNS.mitm, `system_settings.ini`, ExeFS/NRO patch format.
+- Original **Prelude** host list and Atmosphère invariants, captured by the
+  Nextendo Network contributors against production containers.
 
 ## Licence
 
-Copyright (C) 2026 Nextendo Network.
+Copyright (C) 2026 Nextendo Network. Licensed under the **PolyForm Shield License
+1.0.0** — use, study, share and modify for any purpose except providing a product
+that competes with Nextendo Network. See [LICENSE.md](LICENSE.md).
 
-Prelude is licensed under the **PolyForm Shield License 1.0.0**. You may use, study, share and
-modify it for any purpose, and distribute your changes, with one exception: you may not use it
-to provide a product that competes with Nextendo Network, or with any product Nextendo Network
-provides using it.
-
-See [LICENSE.md](LICENSE.md) for the full text, or
-<https://polyformproject.org/licenses/shield/1.0.0>.
-
-Required Notice: Copyright 2026 Nextendo Network
-
-This project is not affiliated with, endorsed by, or connected to Nintendo. "Nintendo" and
+Not affiliated with, endorsed by, or connected to Nintendo. "Nintendo" and
 "Nintendo Switch" are trademarks of Nintendo. Use it on hardware you own.

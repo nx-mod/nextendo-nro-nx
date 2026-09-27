@@ -1,170 +1,110 @@
 #---------------------------------------------------------------------------------
-# Nextendo .nro — Makefile (libnx + FreeType + SDL2_mixer pour la BGM, romfs).
-# Base : template officiel switchbrew/switch-examples (application).
+# nextendo-nx — Makefile (devkitA64 + libnx + Aether GUI, trimmed romfs).
+#
+# Aether (lib/Aether) is built as a static library and linked in. It pulls SDL2 +
+# SDL2_ttf/gfx/image and FreeType from the portlibs. Exceptions and RTTI are ON
+# (Aether needs them) — unlike the old Prelude which disabled both.
+#
+# NOTE: this project has NOT been compiled in the environment it was authored in
+# (no devkitPro/Aether toolchain there). See NOTES.md. Build with:
+#   make -C lib/Aether        # build libaether.a first
+#   make -j$(nproc)
 #---------------------------------------------------------------------------------
 .SUFFIXES:
 
 ifeq ($(strip $(DEVKITPRO)),)
-$(error "Please set DEVKITPRO in your environment. export DEVKITPRO=<path to>/devkitpro")
+$(error "Set DEVKITPRO in your environment. export DEVKITPRO=<path to>/devkitpro")
 endif
 
 TOPDIR ?= $(CURDIR)
 include $(DEVKITPRO)/libnx/switch_rules
 
 #---------------------------------------------------------------------------------
-TARGET   := nextendo
-BUILD    := build2
-SOURCES  := source
+TARGET   := nextendo-nx
+BUILD    := build
+SOURCES  := source source/core source/ui
 DATA     := data
-INCLUDES := include
+INCLUDES := include lib/Aether/include
 ROMFS    := romfs
 
-APP_TITLE   := Prelude
+APP_TITLE   := Nextendo
 APP_AUTHOR  := Nextendo Network
-# Règle de version : X.Y.N où N = NEXTENDO_BUILD (source/nextendo_update.h).
-# La version AFFICHÉE dans hbmenu (NACP), le build interne (auto-MAJ) et le tag GitHub
-# doivent TOUJOURS être alignés. Build 20 -> 2.0.1 -> release v2.0.1.
-APP_VERSION := 3.5.2
-# L'icone d'un NRO doit etre un JPEG 256x256 : hbmenu la decode avec libjpeg-turbo
-# (assetsLoadJpgFromMemory) et libnx livre lui-meme un default_icon.jpg. Un PNG se
-# compile sans broncher puis donne une tuile vide dans le menu homebrew.
+APP_VERSION := 1.0.0
 APP_ICON    := icon.jpg
 
 #---------------------------------------------------------------------------------
 ARCH := -march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 
-CFLAGS := -g -Wall -Wextra -O2 -ffunction-sections -fstack-protector-strong -D_FORTIFY_SOURCE=2 $(ARCH) $(DEFINES)
-CFLAGS += $(INCLUDE) -D__SWITCH__
+# Version is derived from APP_VERSION and nothing else (single source of truth).
+DEFINES := -DNEXTENDO_VERSION_MAJOR=$(word 1,$(subst ., ,$(APP_VERSION))) \
+           -DNEXTENDO_VERSION_MINOR=$(word 2,$(subst ., ,$(APP_VERSION))) \
+           -DNEXTENDO_VERSION_PATCH=$(word 3,$(subst ., ,$(APP_VERSION)))
 
-# La version se derive de APP_VERSION et rien d'autre. Elle etait auparavant recopiee a la
-# main dans nextendo_update.h, et le 2026-08-24 la v3.3.9 est sortie en s'annoncant 3.3.8 :
-# le verificateur voyait une version plus recente que la sienne et proposait la mise a jour
-# indefiniment, y compris a qui venait de l'installer. Deux endroits a changer, un seul
-# change : c'est le genre d'oubli qui ne se voit qu'une fois publie.
-CFLAGS += -DNEXTENDO_VERSION_MAJOR=$(word 1,$(subst ., ,$(APP_VERSION)))
-CFLAGS += -DNEXTENDO_VERSION_MINOR=$(word 2,$(subst ., ,$(APP_VERSION)))
-CFLAGS += -DNEXTENDO_VERSION_PATCH=$(word 3,$(subst ., ,$(APP_VERSION)))
-CFLAGS += -I$(PORTLIBS)/include/freetype2 -Wno-format-truncation
+CFLAGS := -g -Wall -Wextra -O2 -ffunction-sections -fstack-protector-strong \
+          $(ARCH) $(DEFINES) $(INCLUDE) -D__SWITCH__
+CFLAGS += -I$(PORTLIBS)/include/freetype2 -I$(PORTLIBS)/include/SDL2
 
-CXXFLAGS := $(CFLAGS) -fno-rtti -fno-exceptions
+# C++17, exceptions + RTTI ON for Aether.
+CXXFLAGS := $(CFLAGS) -std=gnu++17 -fexceptions -frtti
 
 ASFLAGS := -g $(ARCH)
 LDFLAGS  = -specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
-#---------------------------------------------------------------------------------
-# Link : SDL2_mixer (+ codecs MP3/ogg/flac/opus/modplug) AVANT SDL2, puis FreeType,
-# puis SDL2 + deps plateforme via sdl2-config (donne -lSDL2 -lEGL -lglapi
-# -ldrm_nouveau -lnx -lm). Ordre statique : dependents d'abord.
-#---------------------------------------------------------------------------------
-# Link via pkg-config (.pc des portlibs) : liste EXACTE des codecs de SDL2_mixer
-# + deps FreeType, dans le bon ordre. Evite de deviner les noms de libs.
-PKGCONF := PKG_CONFIG_PATH=$(PORTLIBS)/lib/pkgconfig pkg-config
-LIBS := $(shell $(PKGCONF) --static --libs libmpg123 freetype2 2>/dev/null) -lnx
+# Aether static lib first, then SDL2 stack + FreeType + codecs + libnx.
+LIBS := -laether \
+        -lSDL2_ttf -lSDL2_gfx -lSDL2_image -lSDL2 \
+        -lEGL -lglapi -ldrm_nouveau \
+        -lfreetype -lpng -ljpeg -lwebp -lbz2 -lz \
+        -lnx -lm -lstdc++
 
-#---------------------------------------------------------------------------------
-LIBDIRS := $(PORTLIBS) $(LIBNX)
+LIBDIRS := $(PORTLIBS) $(LIBNX) $(TOPDIR)/lib/Aether/lib
 
 #---------------------------------------------------------------------------------
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 #---------------------------------------------------------------------------------
-
-export OUTPUT := $(CURDIR)/$(TARGET)
-export TOPDIR := $(CURDIR)
-
-export VPATH := $(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
-                $(foreach dir,$(DATA),$(CURDIR)/$(dir))
-
-export DEPSDIR := $(CURDIR)/$(BUILD)
+export OUTPUT   := $(CURDIR)/$(TARGET)
+export TOPDIR   := $(CURDIR)
+export VPATH    := $(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
+                   $(foreach dir,$(DATA),$(CURDIR)/$(dir))
+export DEPSDIR  := $(CURDIR)/$(BUILD)
 
 CFILES   := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 CPPFILES := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-SFILES   := $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-BINFILES := $(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
 
 ifeq ($(strip $(CPPFILES)),)
-	export LD := $(CC)
+    export LD := $(CC)
 else
-	export LD := $(CXX)
+    export LD := $(CXX)
 endif
 
-export OFILES_BIN := $(addsuffix .o,$(BINFILES))
-export OFILES_SRC := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
-export OFILES     := $(OFILES_BIN) $(OFILES_SRC)
-export HFILES_BIN := $(addsuffix .h,$(subst .,_,$(BINFILES)))
-
-export INCLUDE := $(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
-                  $(foreach dir,$(LIBDIRS),-I$(dir)/include) \
-                  -I$(CURDIR)/$(BUILD)
-
-export LIBPATHS := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
-
+export OFILES    := $(CPPFILES:.cpp=.o) $(CFILES:.c=.o)
+export INCLUDE   := $(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
+                    $(foreach dir,$(LIBDIRS),-I$(dir)/include) \
+                    -I$(CURDIR)/$(BUILD)
+export LIBPATHS  := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 export BUILD_EXEFS_SRC := $(TOPDIR)/$(EXEFS_SRC)
 
-ifeq ($(strip $(ICON)),)
-	icons := $(wildcard *.jpg)
-	ifneq (,$(findstring $(TARGET).jpg,$(icons)))
-		export APP_ICON := $(TOPDIR)/$(TARGET).jpg
-	else
-		ifneq (,$(findstring icon.jpg,$(icons)))
-			export APP_ICON := $(TOPDIR)/icon.jpg
-		endif
-	endif
+ifeq ($(strip $(ROMFS)),)
 else
-	export APP_ICON := $(TOPDIR)/$(ICON)
-endif
-
-ifeq ($(strip $(NO_ICON)),)
-	export NROFLAGS += --icon=$(APP_ICON)
-endif
-
-ifeq ($(strip $(NO_NACP)),)
-	export NROFLAGS += --nacp=$(CURDIR)/$(TARGET).nacp
-endif
-
-ifneq ($(APP_TITLEID),)
-	export NACPFLAGS += --titleid=$(APP_TITLEID)
-endif
-
-ifneq ($(ROMFS),)
-	export NROFLAGS += --romfsdir=$(CURDIR)/$(ROMFS)
+    export APP_ROMFS := $(TOPDIR)/$(ROMFS)
 endif
 
 .PHONY: $(BUILD) clean all
-
 all: $(BUILD)
-
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
-
 clean:
 	@echo clean ...
 	@rm -fr $(BUILD) $(TARGET).nro $(TARGET).nacp $(TARGET).elf
-
 #---------------------------------------------------------------------------------
 else
 .PHONY: all
-
 DEPENDS := $(OFILES:.o=.d)
-
-all : $(OUTPUT).nro
-
-ifeq ($(strip $(NO_NACP)),)
-$(OUTPUT).nro : $(OUTPUT).elf $(OUTPUT).nacp
-else
-$(OUTPUT).nro : $(OUTPUT).elf
-endif
-
-$(OUTPUT).elf : $(OFILES)
-
-$(OFILES_SRC) : $(HFILES_BIN)
-
-%.bin.o %_bin.h : %.bin
-	@echo $(notdir $<)
-	@$(bin2o)
-
+all: $(OUTPUT).nro
+$(OUTPUT).nro: $(OUTPUT).elf $(OUTPUT).nacp
+$(OUTPUT).elf: $(OFILES)
+$(OFILES_SRC): $(HFILES_BIN)
 -include $(DEPENDS)
-
-#---------------------------------------------------------------------------------
 endif
 #---------------------------------------------------------------------------------
