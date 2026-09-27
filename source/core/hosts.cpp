@@ -85,10 +85,25 @@ std::string build(const std::string &ip) {
     host(ip, " bcat-data-lp1.cdn.nintendo.net");
     host(ip, " bcat-topics-lp1.cdn.nintendo.net");
 
+    // Nextendo services that sit on hosts no wildcard above covers. The
+    // sni-router demuxes these to the right backend by SNI.
+    // Tagaya (title version list) -> nextendo-tagaya-nx.
+    host(ip, " tagaya.hac.lp1.eshop.nintendo.net");
+    // NAS (Nintendo Wi-Fi Connection auth, emulated Wii/DS) -> nextendo-gamespy-nx.
+    host(ip, " nas.nintendowifi.net");
+
     // --- Demonware (Crash Team Racing: Nitro-Fueled, Diablo III) ---
     o += "\n# --- Redirect to the private Demonware server (CTR, Diablo III) ---\n";
     host(ip, " demonware.net");
     host(ip, " *.demonware.net");
+
+    // --- Epic Online Services (Fall Guys and other EOS titles) -> nextendo-eos-nx.
+    // These talk to Epic, not Nintendo, so no Nintendo wildcard covers them.
+    o += "\n# --- Redirect to the private EOS server (Fall Guys, EOS titles) ---\n";
+    host(ip, " api.epicgames.dev");
+    host(ip, "    *.epicgames.dev");
+    host(ip, " api.epicgames.com");
+    host(ip, "    *.ol.epicgames.com");
 
     o += "\n# --- 2) NAT-check #2: distinct IP from nncs1 (else MK8 test-103) ---\n";
     host(nncs2, "  nncs2-*.n.n.srv.nintendo.net");
