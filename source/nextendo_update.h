@@ -609,6 +609,13 @@
 
 #define NEXTENDO_BUILD 70
 
+// Mise a jour OBLIGATOIRE (verrou du homebrew). 0 = desactivee : aucune requete vers GitHub au demarrage,
+// ni bandeau, ni verrou ; Prelude reste utilisable quelle que soit la derniere release. Compiler avec
+// -DPRELUDE_MANDATORY_UPDATE=1 pour retrouver l'ancien comportement.
+#ifndef PRELUDE_MANDATORY_UPDATE
+#define PRELUDE_MANDATORY_UPDATE 0
+#endif
+
 // Version SEMVER de CE build. Doit rester alignee avec APP_VERSION (Makefile).
 // Le compare a l'updater se fait en semver complet (maj.min.patch), pas avec
 // NEXTENDO_BUILD : les tags GitHub sont des semver (v3.2.5), pas des compteurs.

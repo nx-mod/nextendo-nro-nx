@@ -215,6 +215,9 @@ static int semver_cmp(int amaj, int amin, int apatch, int bmaj, int bmin, int bp
 
 NextendoUpdate nextendo_update_check(void) {
     NextendoUpdate u = { false, 0, 0, 0, 0 };
+#if !PRELUDE_MANDATORY_UPDATE
+    return u;   // pas de verrou, pas de requete : voir nextendo_update.h
+#endif
     socketInitializeDefault();
     Result rc = sslInitialize(4);
     if (R_FAILED(rc)) { socketExit(); return u; }
