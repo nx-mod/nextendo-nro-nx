@@ -90,6 +90,15 @@ else
     export APP_ROMFS := $(TOPDIR)/$(ROMFS)
 endif
 
+# elf2nro asset flags (icon + nacp + romfs). Without these the .nro is built
+# with no asset section, so the bundled font and the cert-trust patches under
+# romfs/ never reach the console. switch_rules uses NROFLAGS but does not define
+# it — the application Makefile must.
+export NROFLAGS := --icon=$(CURDIR)/$(APP_ICON) --nacp=$(OUTPUT).nacp
+ifneq ($(strip $(APP_ROMFS)),)
+    export NROFLAGS += --romfsdir=$(APP_ROMFS)
+endif
+
 .PHONY: $(BUILD) clean all
 all: $(BUILD)
 $(BUILD):
