@@ -6,10 +6,9 @@
 > Nextendo Network now handles for us, what we drop, and the shape of the Aether
 > (C++) rewrite.
 >
-> **Build status: not compiled here.** This repo has no devkitPro / libnx /
-> Aether toolchain available in the authoring environment, so the C++ below is a
-> reviewed port, not a verified build. Every file that has not been compiled says
-> so at the top. See NOTES.md.
+> **Build status: builds.** `make -C lib/Aether && make` produces
+> `nextendo-nx.nro` with `devkitpro/devkita64`, verified from a clean checkout.
+> The remaining work is i18n and persisting the Settings toggles. See NOTES.md.
 
 ## 1. Why rewrite
 

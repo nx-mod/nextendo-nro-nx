@@ -61,17 +61,19 @@ list in `source/core/hosts.cpp` — that is the whole configuration surface.
 
 ## Building
 
-Requires devkitPro + Aether. See [`NOTES.md`](NOTES.md). In short:
+Requires devkitPro (Aether is a submodule). See [`NOTES.md`](NOTES.md). In short:
 
 ```sh
-git submodule update --init --recursive
-make -C lib/Aether
-make -j$(nproc)          # -> nextendo-nx.nro
+git submodule update --init --recursive     # fetches lib/Aether
+# Docker (no local devkitPro needed):
+docker run --rm -e HOME=/tmp -v "$PWD:/work" -w /work devkitpro/devkita64 \
+  bash -c 'make -C lib/Aether -j$(nproc) && make -j$(nproc)'
+# -> nextendo-nx.nro   (copy to sd:/switch/)
 ```
 
-> **Status:** this is the Aether rewrite in progress; the C++ has been reviewed
-> but not yet compiled on a real toolchain. `NOTES.md` lists the first-build
-> checklist.
+> **Status:** builds (verified from a clean checkout with `devkitpro/devkita64`).
+> UI is ~960 lines of C++ on Aether. Remaining: i18n and persisting the Settings
+> toggles — see [`NOTES.md`](NOTES.md). Not yet run on hardware.
 
 ## Credits / sources
 

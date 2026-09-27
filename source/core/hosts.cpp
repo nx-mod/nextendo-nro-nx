@@ -7,8 +7,6 @@
 // production list; only the '#' comment lines were translated to English, and
 // the C string-buffer plumbing became std::string. Atmosphère ignores '#' lines,
 // so redirect behaviour is unchanged. See RESTRUCTURE.md §4 for the invariants.
-//
-// NOT COMPILED in the authoring environment (no devkitPro). Logic-reviewed only.
 #include "nextendo/hosts.hpp"
 #include "nextendo/config.hpp"
 

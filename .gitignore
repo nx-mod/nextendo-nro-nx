@@ -8,7 +8,6 @@
 /backups/
 
 # Vendored library builds
-/lib/Aether/
 
 # Game dumps / extracted material — must NEVER enter the public repo.
 *.nsp

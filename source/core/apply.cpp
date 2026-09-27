@@ -7,8 +7,6 @@
 // UI) are intentionally absent — the servers now own that. Behaviour of what
 // remains matches the audited original: hosts write, INI toggle, per-mode
 // PRODINFO, cert-patch provisioning, backup, reboot.
-//
-// NOT COMPILED in the authoring environment (no devkitPro). Logic-reviewed only.
 #include "nextendo/apply.hpp"
 #include "nextendo/hosts.hpp"
 #include "nextendo/config.hpp"

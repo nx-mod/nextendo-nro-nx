@@ -1,70 +1,56 @@
 # nextendo-nx — build & status notes
 
-## Honest state
+## State
 
-This branch is the **Aether rewrite scaffold** of Prelude, produced as a
-restructure + reviewed port. It has **not been compiled**: the environment it was
-authored in has no devkitPro / libnx / Aether toolchain. Treat every `.cpp/.hpp`
-as logic-reviewed, not build-verified.
+**Builds.** `make -C lib/Aether && make` produces `nextendo-nx.nro` with the
+`devkitpro/devkita64` toolchain (the SDL2 stack + freetype + harfbuzz it needs
+ship in that image). Verified from a clean checkout this session.
 
-What is real and reviewable:
+- **`source/core/{hosts,apply}.cpp`** — the DNS.mitm hosts builder and the system
+  logic (write hosts, toggle `enable_dns_mitm` / `add_defaults_to_dns_hosts`,
+  per-mode `blank_prodinfo_emummc`, provision the cert-trust patch set, back up
+  the user's `default.txt`, reboot). Host lines are verbatim from the audited
+  production list; INI-edit semantics match the original.
+- **`source/main.cpp` + `source/ui/*`** — the Aether UI: a HOME-menu-style
+  `Menu` (Networks / Settings / Diagnostics / About) with a content pane that
+  swaps per selection. Compiles and links against real Aether.
+- **`source/ui/probe.cpp`** — the LAN server-reachability check on the
+  Diagnostics pane (TCP connect + select).
 
-- **`source/core/hosts.cpp`** — the DNS.mitm hosts builder. Every functional host
-  line is verbatim from the audited production list (`nextendo_hosts.h` /
-  `nextendo_apply.c` on `main`); only `#` comments were translated to English.
-- **`source/core/apply.cpp`** — write hosts, toggle `enable_dns_mitm` /
-  `add_defaults_to_dns_hosts`, per-mode `blank_prodinfo_emummc`, provision the
-  cert-trust patch set, back up the user's `default.txt`, purge leak-y logs,
-  reboot. The INI-editing semantics match the original `iniSetDnsMitm` /
-  `iniSetBlankProdinfoEmummc` (section-aware, replaces commented keys in place).
-
-What is a scaffold following Aether's API but **unverified against real headers**:
-
-- `source/main.cpp`, `source/ui/*` — `Application` / `Screen` / `Element` usage.
-  Method names (`createMessageBox`, `theme()->text()`, `FilledButton`, `List`,
-  `Controls`, `Overlay`, `TextBlock`) follow Aether's conventions as used by
-  TriPlayer, but must be checked against `lib/Aether/include` when building.
-
-## To build (on a real toolchain)
+## Building
 
 ```sh
-# 1. Vendor Aether (the GUI library TriPlayer uses).
-git submodule add https://github.com/nx-mod/Aether lib/Aether   # or tallbl0nde/Aether
-git submodule update --init --recursive
-make -C lib/Aether                 # produces lib/Aether/lib/libaether.a
+git clone https://github.com/nx-mod/nextendo-nx    # (repo will be renamed)
+cd nextendo-nx
+git submodule update --init --recursive            # fetches lib/Aether
 
-# 2. Build the app.
-export DEVKITPRO=/opt/devkitpro
-dkp-pacman -Syu --noconfirm switch-sdl2 switch-sdl2_ttf switch-sdl2_gfx \
-                            switch-sdl2_image switch-freetype
-make -j$(nproc)                    # -> nextendo-nx.nro
+# with Docker (no local devkitPro needed):
+docker run --rm -e HOME=/tmp -v "$PWD:/work" -w /work devkitpro/devkita64 \
+  bash -c 'make -C lib/Aether -j$(nproc) && make -j$(nproc)'
+# -> nextendo-nx.nro   (copy to sd:/switch/)
 ```
 
-Or, matching the old Docker one-liner (adjust packages for the SDL2 stack):
+`lib/Aether` is a git submodule (tallbl0nde/Aether); `make -C lib/Aether` builds
+`libAether.a` once, then the app links it.
 
-```sh
-docker run --rm -v "$PWD:/work" -w /work devkitpro/devkita64 \
-  bash -c 'dkp-pacman -Syu --noconfirm switch-sdl2 switch-sdl2_ttf \
-           switch-sdl2_gfx switch-sdl2_image switch-freetype && \
-           make -C lib/Aether && make -j$(nproc)'
-```
+## Still open / nice-to-have
 
-## First-build checklist (expected fixes)
-
-1. Reconcile Aether method names with `lib/Aether/include` (see above).
-2. Confirm the SDL2 link line — package names / lib order may differ from the
-   list in the `Makefile`.
-3. Port the 5-language string table out of the old `lang.c` into
-   `include/nextendo/i18n.hpp` + `source/core/i18n.cpp` (currently English-only
-   literals in the UI). Mechanical.
-4. Decide the on-demand SSBU-mod fetch (was a 5.9 MB bundle): either drop it
-   entirely or have the updater pull a GitHub release asset. If kept, restore a
-   zip lib (miniz) for it.
+- **i18n**: the UI strings are English literals. The old `lang.c` carried
+  English / Español / Português / Français / 中文; port that table into a small
+  `i18n` module and wire the Settings "Language" option (currently a stub).
+- **Settings toggles**: "Language" and "Restore my hosts in Nintendo mode" are
+  stubbed (no persistence yet). Back them with a small config file at
+  `sd:/switch/nextendo-nx/config.ini`.
+- **On-demand mod fetch**: the old SSBU bundle (5.9 MB) is gone; if it's wanted,
+  have the (not-yet-added) self-updater pull it from a GitHub release asset.
+- **Self-updater**: not yet ported from old Prelude; add if desired.
+- On-console test: it builds, but has not been run on hardware/emulator here.
 
 ## Trimmed vs. old Prelude
 
-Dropped from the `.nro`: `ssbu_quickplay/` (5.9 MB), `bgm.mp3` (4.7 MB) + mpg123
-audio thread, `bcatdata/` (1.8 MB, now served by `nextendo-bcat-nx`),
-`smb35_spbattle/`, the flag installer, the custom framebuffer UI, and the 15-state
-`main()` switch. Kept: mode picker, hosts/INI/PRODINFO apply, cert-trust patch set
-(`romfs/sd`), backup, self-update, telemetry blocking. See `RESTRUCTURE.md`.
+Dropped from the `.nro`: `ssbu_quickplay/` (5.9 MB), `bgm.mp3` (4.7 MB) + audio,
+`bcatdata/` (1.8 MB, now served by `nextendo-bcat-nx`), `smb35_spbattle/`, the
+flag installer, the custom framebuffer UI, and the 15-state `main()` switch.
+Kept: mode picker, hosts/INI/PRODINFO apply, cert-trust patch set (`romfs/sd`),
+telemetry blocking. UI source is ~960 lines (was ~10k lines of C). See
+`RESTRUCTURE.md`.

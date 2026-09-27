@@ -24,7 +24,7 @@ TARGET   := nextendo-nx
 BUILD    := build
 SOURCES  := source source/core source/ui
 DATA     := data
-INCLUDES := include lib/Aether/include
+INCLUDES := include source lib/Aether/include
 ROMFS    := romfs
 
 APP_TITLE   := Nextendo
@@ -45,19 +45,20 @@ CFLAGS := -g -Wall -Wextra -O2 -ffunction-sections -fstack-protector-strong \
 CFLAGS += -I$(PORTLIBS)/include/freetype2 -I$(PORTLIBS)/include/SDL2
 
 # C++17, exceptions + RTTI ON for Aether.
-CXXFLAGS := $(CFLAGS) -std=gnu++17 -fexceptions -frtti
+CXXFLAGS := $(CFLAGS) -std=gnu++17 -fno-rtti -fno-exceptions
 
 ASFLAGS := -g $(ARCH)
 LDFLAGS  = -specs=$(DEVKITPRO)/libnx/switch.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 # Aether static lib first, then SDL2 stack + FreeType + codecs + libnx.
-LIBS := -laether \
+LIBS := -lAether \
         -lSDL2_ttf -lSDL2_gfx -lSDL2_image -lSDL2 \
         -lEGL -lglapi -ldrm_nouveau \
-        -lfreetype -lpng -ljpeg -lwebp -lbz2 -lz \
+        -lfreetype -lharfbuzz -lfreetype \
+        -lpng -ljpeg -lwebp -lbz2 -lz \
         -lnx -lm -lstdc++
 
-LIBDIRS := $(PORTLIBS) $(LIBNX) $(TOPDIR)/lib/Aether/lib
+LIBDIRS := $(PORTLIBS) $(LIBNX) $(TOPDIR)/lib/Aether
 
 #---------------------------------------------------------------------------------
 ifneq ($(BUILD),$(notdir $(CURDIR)))
