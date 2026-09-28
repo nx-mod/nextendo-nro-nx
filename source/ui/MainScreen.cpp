@@ -168,7 +168,7 @@ void MainScreen::showDiagnostics() {
     struct Svc { const char *name; int port; };
     static const Svc svcs[] = {
         {"Auth / NEX (443)", 443}, {"Demonware auth (8460)", 8460},
-        {"BCAT (8470)", 8470}, {"Tagaya (8471)", 8471}, {"aauth (8473)", 8473},
+        {"BCAT (8470)", 8470}, {"Tagaya (8471)", 8471}, {"dauth + aauth (8446)", 8446},
     };
     for (const auto &sv : svcs) {
         bool up = ui::probe::reachable(serverIp, sv.port, 600);
