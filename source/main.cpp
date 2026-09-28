@@ -19,14 +19,12 @@ int main(int, char **) {
         "Nextendo", 1280, 720,
         [](const std::string, const bool) {}); // swallow Aether's log
 
+    // The console's own theme (Basic White / Basic Black), with Horizon's pulsing cyan highlight.
+    ui::theme::init();
     window->setBackgroundColour(ui::theme::Background);
     window->setHighlightBackground(ui::theme::HighlightBg);
-    window->setHighlightOverlay(Aether::Colour(255, 255, 255, 40));
-    // Nextendo-orange highlight border, gently pulsing.
-    window->setHighlightAnimation([](const uint32_t t) -> Aether::Colour {
-        const double f = 0.5 + 0.5 * std::sin(t / 400.0);
-        return Aether::Colour(255, 120 + (int)(30 * f), 30, 255);
-    });
+    window->setHighlightOverlay(ui::theme::System.selected);
+    window->setHighlightAnimation(ui::theme::System.highlightFunc);
     window->setFont("romfs:/fonts/Poppins-Regular.ttf");
 
     auto *screen = new ui::MainScreen(window);

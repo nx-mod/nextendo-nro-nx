@@ -92,7 +92,7 @@ void MainScreen::showNetworks() {
     auto *nx = new Aether::FilledButton(kContentX, cy, 380, 150, "NEXTENDO", 34,
         [this]() { confirmSwitch(Mode::Nextendo); });
     nx->setFillColour(theme::Accent);
-    nx->setTextColour(Aether::Colour(20, 20, 20, 255));
+    nx->setTextColour(theme::OnAccent);
     content->addElement(nx);
 
     auto *nn = new Aether::BorderButton(kContentX + 400, cy, 380, 150, 4, "NINTENDO", 34,
@@ -161,7 +161,7 @@ void MainScreen::showDiagnostics() {
     auto *probeBtn = new Aether::FilledButton(kContentX, cy, 260, 60, "Test servers", 24,
         [this]() { showDiagnostics(); }); // rebuild; probe runs below on each build
     probeBtn->setFillColour(theme::Accent);
-    probeBtn->setTextColour(Aether::Colour(20, 20, 20, 255));
+    probeBtn->setTextColour(theme::OnAccent);
     content->addElement(probeBtn);
     cy += 84;
 
