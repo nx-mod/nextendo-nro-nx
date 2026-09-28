@@ -7,6 +7,8 @@ Upstream's README is kept as [README.upstream.md](README.upstream.md).
 
 ## nx-mod changes
 
+- **Named `nextendo-nx.nro`** ("Nextendo NX (testing)"), so it installs next to the stock
+  Prelude (`nextendo.nro`) on the same SD card.
 - **LAN build.** `make LAN_HOST=<ip> [LAN_HOST2=<ip>]` makes the LAN stack the default server
   (real Nextendo stays the alternative). Without `LAN_HOST` the build is upstream's.
 - **Local CA in the browser bundles.** The console's browser trusts `Nextendo Local CA`, the
@@ -17,7 +19,7 @@ Upstream's README is kept as [README.upstream.md](README.upstream.md).
 
 ## Build
 
-devkitPro (devkitA64) and `make`, or `make LAN_HOST=<your stack's address>`. In nextendo-testing,
+devkitPro (devkitA64) and `make` (builds `nextendo-nx.nro`), or `make LAN_HOST=<your stack's address>`. In nextendo-testing,
 `build_all.ps1` builds it for the address in `stack.cfg`.
 
 ## Credits

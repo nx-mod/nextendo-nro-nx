@@ -12,14 +12,14 @@ TOPDIR ?= $(CURDIR)
 include $(DEVKITPRO)/libnx/switch_rules
 
 #---------------------------------------------------------------------------------
-TARGET   := nextendo
+TARGET   := nextendo-nx
 BUILD    := build2
 SOURCES  := source
 DATA     := data
 INCLUDES := include
 ROMFS    := romfs
 
-APP_TITLE   := Prelude
+APP_TITLE   := Nextendo NX (testing)
 APP_AUTHOR  := Nextendo Network
 # Règle de version : X.Y.N où N = NEXTENDO_BUILD (source/nextendo_update.h).
 # La version AFFICHÉE dans hbmenu (NACP), le build interne (auto-MAJ) et le tag GitHub
