@@ -28,9 +28,21 @@
 #endif
 
 // IPs des serveurs disponibles (défaut + alternatif via code ↑↓←→).
+// nx-mod: `make LAN_HOST=<ip> [LAN_HOST2=<ip>]` builds for a nextendo-testing LAN stack: its address is the
+// default, the real Nextendo stays the alternative. Without LAN_HOST the addresses are upstream's.
+#ifdef NEXTENDO_LAN_HOST
+#define NEXTENDO_SERVER_IP_DEFAULT  NEXTENDO_LAN_HOST
+#define NEXTENDO_SERVER_IP_ALT      "51.178.29.194"
+#ifdef NEXTENDO_LAN_HOST2
+#define NEXTENDO_SERVER_IP_NNCSD2   NEXTENDO_LAN_HOST2
+#else
+#define NEXTENDO_SERVER_IP_NNCSD2   NEXTENDO_LAN_HOST
+#endif
+#else
 #define NEXTENDO_SERVER_IP_DEFAULT  "51.178.29.194"
 #define NEXTENDO_SERVER_IP_ALT      "3.135.232.168"
 #define NEXTENDO_SERVER_IP_NNCSD2   "164.132.111.120"
+#endif
 
 // IP courante utilisée par les hosts dns.mitm (modifiable via ↑↓←→).
 extern char g_server_ip[];

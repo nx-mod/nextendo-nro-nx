@@ -45,6 +45,13 @@ CFLAGS += -DNEXTENDO_VERSION_MAJOR=$(word 1,$(subst ., ,$(APP_VERSION)))
 CFLAGS += -DNEXTENDO_VERSION_MINOR=$(word 2,$(subst ., ,$(APP_VERSION)))
 CFLAGS += -DNEXTENDO_VERSION_PATCH=$(word 3,$(subst ., ,$(APP_VERSION)))
 CFLAGS += -I$(PORTLIBS)/include/freetype2 -Wno-format-truncation
+# nx-mod: build for a nextendo-testing LAN stack (see source/nextendo_config.h).
+ifneq ($(LAN_HOST),)
+CFLAGS += -DNEXTENDO_LAN_HOST=\"$(LAN_HOST)\"
+endif
+ifneq ($(LAN_HOST2),)
+CFLAGS += -DNEXTENDO_LAN_HOST2=\"$(LAN_HOST2)\"
+endif
 
 CXXFLAGS := $(CFLAGS) -fno-rtti -fno-exceptions
 

@@ -40,8 +40,13 @@
 char g_server_ip[NEXTENDO_SERVER_IP_MAX] = NEXTENDO_SERVER_IP_DEFAULT;
 
 const char *server_display_name(void) {
+#ifdef NEXTENDO_LAN_HOST
+    if (strcmp(g_server_ip, NEXTENDO_SERVER_IP_DEFAULT) == 0) return "LAN stack (" NEXTENDO_LAN_HOST ")";
+    if (strcmp(g_server_ip, NEXTENDO_SERVER_IP_ALT) == 0)     return "Nextendo (51.178.29.194)";
+#else
     if (strcmp(g_server_ip, NEXTENDO_SERVER_IP_DEFAULT) == 0) return "VPS (51.178.29.194)";
     if (strcmp(g_server_ip, NEXTENDO_SERVER_IP_ALT) == 0)     return "Local (3.135.232.168)";
+#endif
     return g_server_ip;
 }
 
