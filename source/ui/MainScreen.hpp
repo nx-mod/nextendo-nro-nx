@@ -4,6 +4,8 @@
 #pragma once
 #include <Aether/Aether.hpp>
 #include <string>
+#include <utility>
+#include <vector>
 #include "nextendo/apply.hpp"
 
 namespace ui {
@@ -18,11 +20,15 @@ public:
 
     void onLoad() override;
     void onUnload() override;
+    void update(unsigned int dt) override;
 
 private:
     Aether::Window *window;
     Aether::Container *content = nullptr; // right-hand pane, rebuilt per menu item
     Aether::MessageBox *msg = nullptr;    // current modal (owned, deleted on replace)
+    // Closed modals and the frames since: the Window still holds a closed overlay until its next update (and a
+    // button's callback is still running in it), so they are deleted a frame later.
+    std::vector<std::pair<Aether::MessageBox *, int>> closing;
     Aether::Menu *menu = nullptr;
     Aether::MenuOption *optNet = nullptr, *optSet = nullptr, *optUsers = nullptr, *optDiag = nullptr, *optAbout = nullptr;
 

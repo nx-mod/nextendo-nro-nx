@@ -403,8 +403,21 @@ void MainScreen::showInfo(const std::string &text) {
 void MainScreen::closeMsg() {
     if (msg != nullptr) {
         msg->close();
-        delete msg;
+        closing.emplace_back(msg, 0);
         msg = nullptr;
+    }
+}
+
+void MainScreen::update(unsigned int dt) {
+    Aether::Screen::update(dt);
+    // A modal closed this frame is dropped by the Window after this update: free it on the next one.
+    for (auto it = closing.begin(); it != closing.end();) {
+        if (it->second++ >= 1) {
+            delete it->first;
+            it = closing.erase(it);
+        } else {
+            ++it;
+        }
     }
 }
 
