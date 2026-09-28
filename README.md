@@ -1,4 +1,4 @@
-# nextendo-nx (nx-mod testing)
+# nextendo-nro-nx (nx-mod testing)
 
 *(still in alpha testing)*
 
