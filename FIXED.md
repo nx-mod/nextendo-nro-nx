@@ -1,0 +1,14 @@
+# Fixed — nextendo-nro-nx
+
+- **No way to see or add console news**: Diagnostics → Dump / Post / Clear news (local news, no network).
+- **Message boxes**: a separator line between the text and the buttons.
+- **BCAT rejected Nextendo content**: `nextendo_bcat_sig` patch staged in romfs (bcat 22.5.0), covering all four
+  signature checks (PSS and PKCS#1 v1.5, SHA-1 and SHA-256), not only PSS SHA-256.
+- **Half-linked users could not be deleted (2002-0001)**: Users → Unlink removes the link on this console only, then
+  offers a reboot.
+
+## Credits
+
+- [sys-patch](https://github.com/impeeza/sys-patch) — the exefs patch approach.
+- [Linkalho](https://github.com/impeeza/linkalho) (original by rdmrocha) — the local unlink approach, reimplemented.
+- The whole Nextendo Network team — https://nextendo.network. Nextendo is awesome.

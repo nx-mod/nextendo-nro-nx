@@ -24,13 +24,14 @@ private:
     Aether::Container *content = nullptr; // right-hand pane, rebuilt per menu item
     Aether::MessageBox *msg = nullptr;    // current modal (owned, deleted on replace)
     Aether::Menu *menu = nullptr;
-    Aether::MenuOption *optNet = nullptr, *optSet = nullptr, *optDiag = nullptr, *optAbout = nullptr;
+    Aether::MenuOption *optNet = nullptr, *optSet = nullptr, *optUsers = nullptr, *optDiag = nullptr, *optAbout = nullptr;
 
     std::string serverIp;
 
     // Panes.
     void showNetworks();
     void showSettings();
+    void showUsers();
     void showDiagnostics();
     void showAbout();
 
@@ -39,6 +40,7 @@ private:
     void confirmSwitch(nextendo::apply::Mode mode);
     void doSwitch(nextendo::apply::Mode mode);
     void closeMsg();
+    void showInfo(const std::string &text); // an OK message box with centred text
 };
 
 } // namespace ui

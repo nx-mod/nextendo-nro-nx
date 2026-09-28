@@ -6,6 +6,8 @@
 #include "ui/probe.hpp"
 #include "nextendo/config.hpp"
 #include "nextendo/hosts.hpp"
+#include "nextendo/news.hpp"
+#include "nextendo/users.hpp"
 
 #include <switch.h>
 #include <string>
@@ -16,6 +18,8 @@ namespace ui {
 namespace cfg = nextendo::config;
 using nextendo::apply::Mode;
 using nextendo::apply::Boot;
+
+static Aether::Element *centredBody(const std::string &text, unsigned int size, int w, int h);
 
 // Layout constants.
 static constexpr int kHeaderH = 88;
@@ -44,12 +48,15 @@ void MainScreen::onLoad() {
         [this]() { menu->setActiveOption(optNet); showNetworks(); });
     optSet = new Aether::MenuOption("Settings", theme::Accent, theme::Text,
         [this]() { menu->setActiveOption(optSet); showSettings(); });
+    optUsers = new Aether::MenuOption("Users", theme::Accent, theme::Text,
+        [this]() { menu->setActiveOption(optUsers); showUsers(); });
     optDiag = new Aether::MenuOption("Diagnostics", theme::Accent, theme::Text,
         [this]() { menu->setActiveOption(optDiag); showDiagnostics(); });
     optAbout = new Aether::MenuOption("About", theme::Accent, theme::Text,
         [this]() { menu->setActiveOption(optAbout); showAbout(); });
     menu->addElement(optNet);
     menu->addElement(optSet);
+    menu->addElement(optUsers);
     menu->addElement(optDiag);
     menu->addElement(optAbout);
     menu->setActiveOption(optNet);
@@ -141,6 +148,64 @@ void MainScreen::showSettings() {
     content->addElement(list);
 }
 
+// --- Users pane: link state; unlink locally (then delete in System Settings) ---
+void MainScreen::showUsers() {
+    clearContent();
+    auto *list = new Aether::List(kContentX, kHeaderH + 24, kContentW, 720 - kHeaderH - 120);
+    list->addElement(new Aether::ListHeading("Users"));
+    std::string err;
+    auto users = nextendo::users::list(err);
+    if (!err.empty()) {
+        auto *t = new Aether::ListComment("Could not list users: " + err);
+        list->addElement(t);
+    }
+    for (const auto &u : users) {
+        const AccountUid uid = u.uid;
+        const std::string name = u.nickname;
+        auto *opt = new Aether::ListOption(name, u.linked ? "Linked" : "Offline", [this, uid, name, linked = u.linked]() {
+            if (!linked) {
+                showInfo(name + " has no Nintendo Account link. Delete it in System Settings > Users.");
+                return;
+            }
+            closeMsg();
+            msg = new Aether::MessageBox();
+            msg->setLineColour(theme::Line);
+            msg->setRectangleColour(theme::Panel);
+            msg->setTextColour(theme::Text);
+            msg->setBodySize(600, 220);
+            msg->setBody(centredBody("Unlink " + name + "'s Nintendo Account on this console? Its saves stay. "
+                                     "Then it can be deleted in System Settings > Users.", 22, 600, 220));
+            msg->addLeftButton("Cancel", [this]() { closeMsg(); });
+            msg->addRightButton("Unlink", [this, uid, name]() {
+                std::string e;
+                if (!nextendo::users::unlinkLocally(uid, e)) {
+                    showInfo("Could not unlink " + name + ": " + e);
+                    return;
+                }
+                // The account service keeps the old link state until it restarts: reboot, then delete.
+                closeMsg();
+                msg = new Aether::MessageBox();
+                msg->setLineColour(theme::Line);
+                msg->setRectangleColour(theme::Panel);
+                msg->setTextColour(theme::Text);
+                msg->setBodySize(600, 220);
+                msg->setBody(centredBody(name + " is unlinked on this console. Reboot, then delete it in "
+                                         "System Settings > Users.", 22, 600, 220));
+                msg->addLeftButton("Later", [this]() { closeMsg(); });
+                msg->addRightButton("Reboot", []() { nextendo::apply::reboot(); });
+                window->addOverlay(msg);
+            });
+            window->addOverlay(msg);
+        });
+        opt->setColours(theme::Line, u.linked ? theme::Accent : theme::Muted, theme::Text);
+        list->addElement(opt);
+    }
+    list->addElement(new Aether::ListComment(
+        "Unlink removes the Nintendo Account link on this console only, for users a failed link left half-linked "
+        "(\"unable to use\", 2002-0001 on delete). Nothing is sent to a server."));
+    content->addElement(list);
+}
+
 // --- Diagnostics pane: mode + a live LAN server probe --------------------
 void MainScreen::showDiagnostics() {
     clearContent();
@@ -163,6 +228,48 @@ void MainScreen::showDiagnostics() {
     probeBtn->setFillColour(theme::Accent);
     probeBtn->setTextColour(theme::OnAccent);
     content->addElement(probeBtn);
+
+    // Copies the console's news to the SD card (read-only): the reference format for Nextendo news.
+    auto *newsBtn = new Aether::BorderButton(kContentX + 280, cy, 250, 60, 3, "Dump news", 24, [this]() {
+        std::string err;
+        int n = nextendo::news::dump(err);
+        showInfo(n < 0 ? "Could not read the news: " + err
+                       : std::to_string(n) + " news item(s) copied to sd:/switch/nextendo-nx/news/");
+    });
+    newsBtn->setTextColour(theme::Text);
+    content->addElement(newsBtn);
+
+    // Posts the news records in sd:/switch/nextendo-nx/news/post/ as local news (no network, no signature).
+    auto *postBtn = new Aether::BorderButton(kContentX + 550, cy, 250, 60, 3, "Post news", 24, [this]() {
+        std::string err;
+        int n = nextendo::news::post(err);
+        showInfo(n < 0 ? "Could not post news: " + err
+                       : std::to_string(n) + " news item(s) posted. Results in sd:/switch/nextendo-nx/news/post.txt");
+    });
+    postBtn->setTextColour(theme::Text);
+    content->addElement(postBtn);
+    cy += 84;
+
+    // Removes all news from the console (Nintendo's notices too), after a confirmation.
+    auto *clearBtn = new Aether::BorderButton(kContentX + 280, cy, 250, 60, 3, "Clear news", 24, [this]() {
+        closeMsg();
+        msg = new Aether::MessageBox();
+        msg->setLineColour(theme::Line);
+        msg->setRectangleColour(theme::Panel);
+        msg->setTextColour(theme::Text);
+        msg->setBodySize(600, 220);
+        msg->setBody(centredBody("Remove ALL news from this console, Nintendo's notices included? "
+                                 "Use Dump news first to keep a copy.", 22, 600, 220));
+        msg->addLeftButton("Cancel", [this]() { closeMsg(); });
+        msg->addRightButton("Clear", [this]() {
+            std::string err;
+            bool ok = nextendo::news::clear(err);
+            showInfo(ok ? "All news removed. Use Post news to add items back." : "Could not clear the news: " + err);
+        });
+        window->addOverlay(msg);
+    });
+    clearBtn->setTextColour(theme::Text);
+    content->addElement(clearBtn);
     cy += 84;
 
     // Probe the configured server on a few well-known Nextendo ports and show
@@ -232,6 +339,10 @@ static Aether::Element *centredBody(const std::string &text, unsigned int size, 
         body->addElement(t);
         y += lineH;
     }
+    // A separator between the text and the buttons below it.
+    auto *rule = new Aether::Rectangle(0, h - 2, w, 2);
+    rule->setColour(theme::Muted);
+    body->addElement(rule);
     return body;
 }
 
@@ -273,6 +384,18 @@ void MainScreen::doSwitch(Mode mode) {
     msg->setBody(centredBody(
         "Could not apply the change. See the trace on your SD card "
         "(sd:/switch/nextendo-nx/trace.txt).", 22, 600, 200));
+    msg->addRightButton("OK", [this]() { closeMsg(); });
+    window->addOverlay(msg);
+}
+
+void MainScreen::showInfo(const std::string &text) {
+    closeMsg();
+    msg = new Aether::MessageBox();
+    msg->setLineColour(theme::Line);
+    msg->setRectangleColour(theme::Panel);
+    msg->setTextColour(theme::Text);
+    msg->setBodySize(600, 200);
+    msg->setBody(centredBody(text, 22, 600, 200));
     msg->addRightButton("OK", [this]() { closeMsg(); });
     window->addOverlay(msg);
 }
