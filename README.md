@@ -1,93 +1,31 @@
-# nextendo-nx
+# nextendo-nx (nx-mod testing)
 
-**nextendo-nx** is the Nintendo Switch homebrew that flips your console between the
-[Nextendo Network](https://nextendo.network) and Nintendo's official servers.
+**A rewrite of [Prelude](https://github.com/NextendoNetwork/Prelude-Nro) by nx-mod.** The Nextendo Network
+homebrew for a real Nintendo Switch, rebuilt from the ground up on the [Aether](https://github.com/tallbl0nde/Aether)
+GUI and around nx-mod's new servers: BCAT, title versions (tagaya), push and the rest come from the network,
+so the old bundled per-game data and workarounds are gone. Part of
+[nextendo-testing](https://github.com/nx-mod/nextendo-testing): the whole Nextendo Network, run on a LAN.
 
-It is a small `.nro` you run from the homebrew menu. Pick a mode, it applies the
-change and reboots. Nothing is permanent — switch back whenever you want.
+It flips the console between the Nextendo Network and Nintendo's servers: DNS.mitm hosts, certificate
+trust, per-mode PRODINFO, all reversible. Builds `nextendo-nx.nro`, which sits next to the stock Prelude.
+Design notes: [RESTRUCTURE.md](RESTRUCTURE.md), [NOTES.md](NOTES.md), [README.nextendo-nx.md](README.nextendo-nx.md).
 
-```
-        Which network do you want to load?
-        [ NEXTENDO ]     [ NINTENDO ]
-```
+## LAN changes (testing)
 
-This is the trimmed, restructured successor to **Prelude**, rewritten on the
-[Aether](https://github.com/tallbl0nde/Aether) GUI library (the one TriPlayer
-uses). Where Prelude bundled ~14 MB of per-game mods, BCAT data and patches in the
-`.nro`, nextendo-nx ships almost none of it: the network now delivers that.
+- `make LAN_HOST=<ip> [LAN_HOST2=<ip>]` points every address at a LAN stack: the default server, nncs2
+  (Pia needs a second address) and MK8. The production VPS stays the alternative.
+- The browser bundles also trust `Nextendo Local CA`, the stack's CA, so the account-link page loads from it.
 
-## What it does
-
-- **Nextendo mode**: writes the Atmosphère DNS.mitm hosts that redirect Nintendo
-  traffic to the Nextendo servers, enables `enable_dns_mitm`, provisions the
-  certificate-trust patch set, and (on emuMMC) serves the real device cert —
-  confined by DNS.mitm, so your identity never leaks to Nintendo.
-- **Nintendo mode**: removes every host redirect and the cert-trust stack,
-  restores your own `default.txt` if it backed one up, blanks emuMMC PRODINFO, and
-  restores Atmosphère's native telemetry blocking.
-
-Telemetry is blocked in **both** modes.
-
-## How it works
-
-nextendo-nx does not patch games and does not touch the network stack. It writes
-configuration Atmosphère already reads at boot, then reboots:
-
-| What | Where |
-| --- | --- |
-| Host redirections | `/atmosphere/hosts/{sysmmc,emummc,default}.txt` |
-| DNS.mitm on/off | `/atmosphere/config/system_settings.ini` |
-| PRODINFO per mode | `/exosphere.ini` (emuMMC only) |
-| Certificate trust | `exefs_patches/`, `nro_patches/`, CA bundle (`romfs/sd`) |
-
-Everything it does is reversible by switching modes or deleting those files.
-
-## Why the trim
-
-Most of what old Prelude bundled is now handled by the rest of the network:
-
-- **BCAT content** (Splatoon 2/3, SMB35 events) → served by `nextendo-bcat-nx`.
-- **NEX/DataStore games** (MK8, SSBU, ACNH…) → just need the host redirect.
-- **System services** (app-auth, version list, push) → `nextendo-aauth-nx`,
-  `nextendo-tagaya-nx`, `nextendo-npns-nx`.
-
-So the app keeps only the irreducible core — flip the redirect, manage cert trust,
-stay reversible — and hands the content to the servers. See
-[`RESTRUCTURE.md`](RESTRUCTURE.md) for the full trim rationale and
-[`NOTES.md`](NOTES.md) for build status.
-
-The addresses it redirects to live in `include/nextendo/config.hpp` and the host
-list in `source/core/hosts.cpp` — that is the whole configuration surface.
-
-## Building
-
-Requires devkitPro (Aether is a submodule). See [`NOTES.md`](NOTES.md). In short:
+## Build
 
 ```sh
-git submodule update --init --recursive     # fetches lib/Aether
-# Docker (no local devkitPro needed):
-docker run --rm -e HOME=/tmp -v "$PWD:/work" -w /work devkitpro/devkita64 \
-  bash -c 'make -C lib/Aether -j$(nproc) && make -j$(nproc)'
-# -> nextendo-nx.nro   (copy to sd:/switch/)
+git submodule update --init --recursive   # lib/Aether
+make -C lib/Aether && make LAN_HOST=192.168.137.1 LAN_HOST2=192.168.137.2
 ```
 
-> **Status:** builds (verified from a clean checkout with `devkitpro/devkita64`).
-> UI is ~960 lines of C++ on Aether. Remaining: i18n and persisting the Settings
-> toggles — see [`NOTES.md`](NOTES.md). Not yet run on hardware.
+In nextendo-testing, `build_all.ps1` does this for the addresses in `stack.cfg`.
 
-## Credits / sources
+## Credits
 
-- **Aether** — [tallbl0nde/Aether](https://github.com/tallbl0nde/Aether), the GUI
-  library TriPlayer is built on.
-- **Atmosphère** — DNS.mitm, `system_settings.ini`, ExeFS/NRO patch format.
-- Original **Prelude** host list and Atmosphère invariants, captured by the
-  Nextendo Network contributors against production containers.
-
-## Licence
-
-Copyright (C) 2026 Nextendo Network. Licensed under the **PolyForm Shield License
-1.0.0** — use, study, share and modify for any purpose except providing a product
-that competes with Nextendo Network. See [LICENSE.md](LICENSE.md).
-
-Not affiliated with, endorsed by, or connected to Nintendo. "Nintendo" and
-"Nintendo Switch" are trademarks of Nintendo. Use it on hardware you own.
+Rewritten by **nx-mod**, on Prelude by the **Nextendo Network team** — https://nextendo.network.
+Aether by tallbl0nde. Nextendo is awesome.

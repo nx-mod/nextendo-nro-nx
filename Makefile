@@ -39,6 +39,11 @@ ARCH := -march=armv8-a+crc+crypto -mtune=cortex-a57 -mtp=soft -fPIE
 DEFINES := -DNEXTENDO_VERSION_MAJOR=$(word 1,$(subst ., ,$(APP_VERSION))) \
            -DNEXTENDO_VERSION_MINOR=$(word 2,$(subst ., ,$(APP_VERSION))) \
            -DNEXTENDO_VERSION_PATCH=$(word 3,$(subst ., ,$(APP_VERSION)))
+# nx-mod: build for a nextendo-testing LAN stack (include/nextendo/config.hpp).
+ifneq ($(LAN_HOST),)
+DEFINES += -DNEXTENDO_LAN=1 -DNEXTENDO_SERVER_IP_DEFAULT=\"$(LAN_HOST)\" -DNEXTENDO_SERVER_IP_MK8=\"$(LAN_HOST)\" \
+           -DNEXTENDO_SERVER_IP_NNCS2=\"$(if $(LAN_HOST2),$(LAN_HOST2),$(LAN_HOST))\"
+endif
 
 CFLAGS := -g -Wall -Wextra -O2 -ffunction-sections -fstack-protector-strong \
           $(ARCH) $(DEFINES) $(INCLUDE) -D__SWITCH__
