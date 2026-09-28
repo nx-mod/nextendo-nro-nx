@@ -8,6 +8,8 @@
 #include "nextendo/hosts.hpp"
 
 #include <switch.h>
+#include <string>
+#include <vector>
 
 namespace ui {
 
@@ -195,6 +197,44 @@ void MainScreen::showAbout() {
     content->addElement(t);
 }
 
+// A message-box body of w x h with the text wrapped to fit and every line centred, horizontally and vertically.
+// Aether pins a body to the box's top-left and has no centred text block, so the lines are laid out here.
+static Aether::Element *centredBody(const std::string &text, unsigned int size, int w, int h) {
+    const int maxW = w - 60;
+    std::vector<Aether::Text *> lines;
+    std::string line, word;
+    auto flush = [&](const std::string &s) {
+        auto *t = new Aether::Text(0, 0, s, size);
+        t->setColour(theme::Text);
+        lines.push_back(t);
+    };
+    auto fits = [&](const std::string &s) {
+        Aether::Text probe(0, 0, s, size);
+        return probe.w() <= maxW;
+    };
+    for (size_t i = 0; i <= text.size(); i++) {
+        if (i == text.size() || text[i] == ' ') {
+            const std::string candidate = line.empty() ? word : line + " " + word;
+            if (!line.empty() && !fits(candidate)) { flush(line); line = word; }
+            else { line = candidate; }
+            word.clear();
+        } else {
+            word += text[i];
+        }
+    }
+    if (!line.empty()) { flush(line); }
+
+    auto *body = new Aether::Element(0, 0, w, h);
+    const int lineH = lines.empty() ? 0 : lines[0]->h() + 6;
+    int y = (h - lineH * static_cast<int>(lines.size())) / 2;
+    for (auto *t : lines) {
+        t->setXY((w - t->w()) / 2, y);
+        body->addElement(t);
+        y += lineH;
+    }
+    return body;
+}
+
 // --- Switch confirm + apply ---------------------------------------------
 void MainScreen::confirmSwitch(Mode mode) {
     closeMsg();
@@ -204,15 +244,13 @@ void MainScreen::confirmSwitch(Mode mode) {
     msg->setTextColour(theme::Text);
 
     const bool toNx = (mode == Mode::Nextendo);
-    auto *body = new Aether::TextBlock(0, 0,
+    msg->setBodySize(600, 220);
+    msg->setBody(centredBody(
         toNx ? "Switch to Nextendo? This redirects Nintendo traffic to the "
                "Nextendo servers and reboots."
              : "Switch to Nintendo? This removes everything Nextendo installed, "
                "restores the official servers and reboots.",
-        22, 560);
-    body->setColour(theme::Text);
-    msg->setBodySize(600, 220);
-    msg->setBody(body);
+        22, 600, 220));
     msg->addLeftButton("Cancel", [this]() { closeMsg(); });
     msg->addRightButton("Switch", [this, mode]() { doSwitch(mode); });
     window->addOverlay(msg);
@@ -231,12 +269,10 @@ void MainScreen::doSwitch(Mode mode) {
     msg->setLineColour(theme::Line);
     msg->setRectangleColour(theme::Panel);
     msg->setTextColour(theme::Text);
-    auto *body = new Aether::TextBlock(0, 0,
-        "Could not apply the change. See the trace on your SD card "
-        "(sd:/switch/nextendo-nx/trace.txt).", 22, 560);
-    body->setColour(theme::Text);
     msg->setBodySize(600, 200);
-    msg->setBody(body);
+    msg->setBody(centredBody(
+        "Could not apply the change. See the trace on your SD card "
+        "(sd:/switch/nextendo-nx/trace.txt).", 22, 600, 200));
     msg->addRightButton("OK", [this]() { closeMsg(); });
     window->addOverlay(msg);
 }
