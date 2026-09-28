@@ -14,8 +14,13 @@ int dump(std::string &err);
 // network, no signature). Each result goes to news/post.txt. Returns how many were accepted, or -1 with `err`.
 int post(std::string &err);
 
-// Removes every news item from the console (ClearStorage: Nintendo's built-in notices too). Dump first to be
-// able to bring them back with post(). Returns true on success, else false with `err`.
+// Removes every news item from the console (ClearStorage: Nintendo's built-in notices too), then subscribes
+// the default channels again (clearing drops the subscriptions). Dump first to be able to bring items back
+// with post(). Returns true on success, else false with `err`.
 bool clear(std::string &err);
+
+// Subscribes the default channels (nx_news, nx_notice, nx_news_nextendo) and asks for them now. Returns a
+// line per channel (its old -> new subscription status), or "" with `err` set.
+std::string fetch(std::string &err);
 
 } // namespace nextendo::news

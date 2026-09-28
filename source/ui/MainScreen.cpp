@@ -264,12 +264,22 @@ void MainScreen::showDiagnostics() {
         msg->addRightButton("Clear", [this]() {
             std::string err;
             bool ok = nextendo::news::clear(err);
-            showInfo(ok ? "All news removed. Use Post news to add items back." : "Could not clear the news: " + err);
+            showInfo(ok ? "All news removed; the News channels are fetched again from the server."
+                        : "Could not clear the news: " + err);
         });
         window->addOverlay(msg);
     });
     clearBtn->setTextColour(theme::Text);
     content->addElement(clearBtn);
+
+    // Subscribes the default News channels and fetches them now from the server.
+    auto *getBtn = new Aether::BorderButton(kContentX + 550, cy, 250, 60, 3, "Get news", 24, [this]() {
+        std::string err;
+        std::string res = nextendo::news::fetch(err);
+        showInfo(res.empty() ? "Could not get news: " + err : "Subscribed and requested:\n" + res);
+    });
+    getBtn->setTextColour(theme::Text);
+    content->addElement(getBtn);
     cy += 84;
 
     // Probe the configured server on a few well-known Nextendo ports and show

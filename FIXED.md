@@ -1,6 +1,8 @@
 # Fixed — nextendo-nro-nx
 
 - **No way to see or add console news**: Diagnostics → Dump / Post / Clear news (local news, no network).
+- **No news after Clear news**: clearing dropped the channel subscriptions; Clear news now subscribes the default
+  channels again, and **Get news** subscribes and fetches them now.
 - **Message boxes**: a separator line between the text and the buttons.
 - **Crash on closing a message box** (e.g. Clear news): a closed box was freed while the Window and its button's
   callback still used it; it is now freed a frame later.

@@ -139,6 +139,28 @@ int post(std::string &err) {
     return ok;
 }
 
+// The HOME menu's default channels, and the status nn::news uses for "subscribed".
+static const char *const kTopics[] = {"nx_news", "nx_notice", "nx_news_nextendo"};
+static constexpr u32 kSubscribed = 2;
+
+// Subscribes kTopics and requests their reception now. The news service must be initialised.
+static std::string subscribeDefaults() {
+    std::string out;
+    for (const char *t : kTopics) {
+        u32 before = 0;
+        newsGetSubscriptionStatus(t, &before);
+        Result rc = newsSetSubscriptionStatus(t, kSubscribed);
+        if (R_SUCCEEDED(rc)) rc = newsRequestImmediateReception(t);
+        char line[96];
+        if (R_SUCCEEDED(rc))
+            std::snprintf(line, sizeof line, "%s: %u -> %u\n", t, before, kSubscribed);
+        else
+            std::snprintf(line, sizeof line, "%s: %s\n", t, hexResult(rc).c_str());
+        out += line;
+    }
+    return out;
+}
+
 bool clear(std::string &err) {
     Result rc = newsInitialize(NewsServiceType_Administrator);
     if (R_FAILED(rc)) {
@@ -146,12 +168,24 @@ bool clear(std::string &err) {
         return false;
     }
     rc = newsClearStorage();
+    if (R_SUCCEEDED(rc)) subscribeDefaults(); // clearing drops the subscriptions: no news would come back
     newsExit();
     if (R_FAILED(rc)) {
         err = "clear " + hexResult(rc);
         return false;
     }
     return true;
+}
+
+std::string fetch(std::string &err) {
+    Result rc = newsInitialize(NewsServiceType_Administrator);
+    if (R_FAILED(rc)) {
+        err = "news:a " + hexResult(rc);
+        return "";
+    }
+    std::string out = subscribeDefaults();
+    newsExit();
+    return out;
 }
 
 } // namespace nextendo::news
