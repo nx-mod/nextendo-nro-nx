@@ -1,5 +1,7 @@
 # nextendo-nx (nx-mod testing)
 
+*(still in alpha testing)*
+
 **A rewrite of [Prelude](https://github.com/NextendoNetwork/Prelude-Nro) by nx-mod.** The Nextendo Network
 homebrew for a real Nintendo Switch, rebuilt from the ground up on the [Aether](https://github.com/tallbl0nde/Aether)
 GUI and around nx-mod's new servers: BCAT, title versions (tagaya), push and the rest come from the network,
