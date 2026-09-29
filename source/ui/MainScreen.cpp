@@ -176,10 +176,10 @@ void MainScreen::showUsers() {
             msg->setBody(centredBody("Unlink " + name + "'s Nintendo Account on this console? Its saves stay. "
                                      "Then it can be deleted in System Settings > Users.", 22, 600, 220));
             msg->addLeftButton("Cancel", [this]() { closeMsg(); });
-            msg->addRightButton("Unlink", [this, uid, name]() {
+            msg->addRightButton("Unlink", [this, uid, name]() { later([this, uid, name]() {
                 std::string e;
                 if (!nextendo::users::unlinkLocally(uid, e)) {
-                    showInfo("Could not unlink " + name + ": " + e);
+                    openInfo("Could not unlink " + name + ": " + e);
                     return;
                 }
                 // The account service keeps the old link state until it restarts: reboot, then delete.
@@ -194,7 +194,7 @@ void MainScreen::showUsers() {
                 msg->addLeftButton("Later", [this]() { closeMsg(); });
                 msg->addRightButton("Reboot", []() { nextendo::apply::reboot(); });
                 window->addOverlay(msg);
-            });
+            }); });
             window->addOverlay(msg);
         });
         opt->setColours(theme::Line, u.linked ? theme::Accent : theme::Muted, theme::Text);
@@ -224,7 +224,7 @@ void MainScreen::showDiagnostics() {
     cy += 130;
 
     auto *probeBtn = new Aether::FilledButton(kContentX, cy, 260, 60, "Test servers", 24,
-        [this]() { showDiagnostics(); }); // rebuild; probe runs below on each build
+        [this]() { later([this]() { showDiagnostics(); }); }); // rebuild (not from inside this button); probe runs on each build
     probeBtn->setFillColour(theme::Accent);
     probeBtn->setTextColour(theme::OnAccent);
     content->addElement(probeBtn);
@@ -373,7 +373,7 @@ void MainScreen::confirmSwitch(Mode mode) {
                "restores the official servers and reboots.",
         22, 600, 220));
     msg->addLeftButton("Cancel", [this]() { closeMsg(); });
-    msg->addRightButton("Switch", [this, mode]() { doSwitch(mode); });
+    msg->addRightButton("Switch", [this, mode]() { later([this, mode]() { doSwitch(mode); }); });
     window->addOverlay(msg);
 }
 
@@ -399,6 +399,10 @@ void MainScreen::doSwitch(Mode mode) {
 }
 
 void MainScreen::showInfo(const std::string &text) {
+    later([this, text]() { openInfo(text); });
+}
+
+void MainScreen::openInfo(const std::string &text) {
     closeMsg();
     msg = new Aether::MessageBox();
     msg->setLineColour(theme::Line);
@@ -420,6 +424,9 @@ void MainScreen::closeMsg() {
 
 void MainScreen::update(unsigned int dt) {
     Aether::Screen::update(dt);
+    std::vector<std::function<void()>> run;
+    run.swap(pending); // an action may queue another: it runs next frame
+    for (auto &fn : run) fn();
     // A modal closed this frame is dropped by the Window after this update: free it on the next one.
     for (auto it = closing.begin(); it != closing.end();) {
         if (it->second++ >= 1) {

@@ -5,7 +5,8 @@
   channels again, and **Get news** subscribes and fetches them now.
 - **Message boxes**: a separator line between the text and the buttons.
 - **Crash on closing a message box** (e.g. Clear news): a closed box was freed while the Window and its button's
-  callback still used it; it is now freed a frame later.
+  callback still used it; it is now freed a frame later, and actions that swap a box or rebuild a pane run after
+  the button press is handled (they crashed on Clear news too).
 - **BCAT rejected Nextendo content**: `nextendo_bcat_sig` patch staged in romfs (bcat 22.5.0), covering all four
   signature checks (PSS and PKCS#1 v1.5, SHA-1 and SHA-256), not only PSS SHA-256.
 - **Half-linked users could not be deleted (2002-0001)**: Users → Unlink removes the link on this console only, then
