@@ -142,6 +142,7 @@ int post(std::string &err) {
 // The HOME menu's default channels, and the status nn::news uses for "subscribed".
 static const char *const kTopics[] = {"nx_news", "nx_notice", "nx_news_nextendo"};
 static constexpr u32 kSubscribed = 2;
+static constexpr u32 kAutoSubscribed = 3;
 
 // Subscribes kTopics and requests their reception now. The news service must be initialised.
 static std::string subscribeDefaults() {
@@ -149,7 +150,9 @@ static std::string subscribeDefaults() {
     for (const char *t : kTopics) {
         u32 before = 0, after = 0;
         Result getRc = newsGetSubscriptionStatus(t, &before);
-        Result setRc = newsSetSubscriptionStatus(t, kSubscribed);
+        // 2 is subscribed (what the HOME menu writes on Follow), 3 the system's own auto-subscription: leave both.
+        const bool subscribed = R_SUCCEEDED(getRc) && (before == kSubscribed || before == kAutoSubscribed);
+        Result setRc = subscribed ? 0 : newsSetSubscriptionStatus(t, kSubscribed);
         Result reqRc = R_SUCCEEDED(setRc) ? newsRequestImmediateReception(t) : setRc;
         newsGetSubscriptionStatus(t, &after);
         char line[160];

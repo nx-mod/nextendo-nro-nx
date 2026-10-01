@@ -19,8 +19,10 @@ int post(std::string &err);
 // with post(). Returns true on success, else false with `err`.
 bool clear(std::string &err);
 
-// Subscribes the default channels (nx_news, nx_notice, nx_news_nextendo) and asks for them now. Returns a
-// line per channel (its old -> new subscription status), or "" with `err` set.
+// Subscribes the default channels (nx_news, nx_notice, nx_news_nextendo) where they are not already, and asks
+// the console to fetch them from the server now. Returns a line per channel (its old -> new subscription
+// status), or "" with `err` set. Every call's result goes to sd:/switch/nextendo-nx/news/subscribe.txt.
+// A diagnostic (the Get news button): the servers subscribe consoles and tell them when to fetch.
 std::string fetch(std::string &err);
 
 } // namespace nextendo::news
