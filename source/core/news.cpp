@@ -145,18 +145,38 @@ static constexpr u32 kSubscribed = 2;
 
 // Subscribes kTopics and requests their reception now. The news service must be initialised.
 static std::string subscribeDefaults() {
-    std::string out;
+    std::string out, log;
     for (const char *t : kTopics) {
-        u32 before = 0;
-        newsGetSubscriptionStatus(t, &before);
-        Result rc = newsSetSubscriptionStatus(t, kSubscribed);
-        if (R_SUCCEEDED(rc)) rc = newsRequestImmediateReception(t);
-        char line[96];
-        if (R_SUCCEEDED(rc))
-            std::snprintf(line, sizeof line, "%s: %u -> %u\n", t, before, kSubscribed);
+        u32 before = 0, after = 0;
+        Result getRc = newsGetSubscriptionStatus(t, &before);
+        Result setRc = newsSetSubscriptionStatus(t, kSubscribed);
+        Result reqRc = R_SUCCEEDED(setRc) ? newsRequestImmediateReception(t) : setRc;
+        newsGetSubscriptionStatus(t, &after);
+        char line[160];
+        if (R_SUCCEEDED(setRc) && R_SUCCEEDED(reqRc))
+            std::snprintf(line, sizeof line, "%s: %u -> %u\n", t, before, after);
         else
-            std::snprintf(line, sizeof line, "%s: %s\n", t, hexResult(rc).c_str());
+            std::snprintf(line, sizeof line, "%s: %s\n", t, hexResult(R_FAILED(setRc) ? setRc : reqRc).c_str());
         out += line;
+        std::snprintf(line, sizeof line, "%s before=%u (get 0x%X) set(%u)=0x%X request=0x%X after=%u\n", t, before,
+                      getRc, kSubscribed, setRc, reqRc, after);
+        log += line;
+    }
+    // Every call's result, for diagnosis (sd:/switch/nextendo-nx/news/subscribe.txt).
+    NewsTopicName topics[32];
+    u32 n = 0;
+    for (u32 channel = 0; channel < 3; channel++) {
+        Result rc = newsGetTopicList(channel, &n, topics, 32);
+        char line[64];
+        std::snprintf(line, sizeof line, "topic list %u: 0x%X, %u topic(s)\n", channel, rc, R_SUCCEEDED(rc) ? n : 0);
+        log += line;
+        for (u32 i = 0; R_SUCCEEDED(rc) && i < n && i < 32; i++)
+            log += "  " + std::string(topics[i].name, strnlen(topics[i].name, sizeof topics[i].name)) + "\n";
+    }
+    mkdir("sdmc:/switch/nextendo-nx/news", 0777);
+    if (FILE *f = std::fopen("sdmc:/switch/nextendo-nx/news/subscribe.txt", "w")) {
+        std::fwrite(log.data(), 1, log.size(), f);
+        std::fclose(f);
     }
     return out;
 }
