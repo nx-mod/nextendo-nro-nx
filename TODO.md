@@ -6,7 +6,6 @@
   (`titles.txt`; `passphrases.txt` holds the games' own BCAT keys: keep it on the card). Run it and read which
   games use BCAT (Diablo III first).
 - **Users → Unlink**: test on the half-linked users (unlink, reboot, delete in System Settings).
-- **`nextendo_bcat_sig`**: now patches all four bcat signature checks; confirm News loads.
 
 ## Left
 
