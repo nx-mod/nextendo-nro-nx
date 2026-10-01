@@ -273,10 +273,10 @@ void MainScreen::showDiagnostics() {
     content->addElement(clearBtn);
 
     // Subscribes the default News channels and fetches them now from the server.
-    auto *getBtn = new Aether::BorderButton(kContentX + 550, cy, 250, 60, 3, "Get news", 24, [this]() {
+    auto *getBtn = new Aether::BorderButton(kContentX + 550, cy, 250, 60, 3, "Subscribe", 24, [this]() {
         std::string err;
         std::string res = nextendo::news::fetch(err);
-        showInfo(res.empty() ? "Could not get news: " + err : "Subscribed and requested:\n" + res);
+        showInfo(res.empty() ? "Could not subscribe: " + err : "Subscribed and requested:\n" + res);
     });
     getBtn->setTextColour(theme::Text);
     content->addElement(getBtn);
