@@ -6,6 +6,7 @@
 #include "ui/probe.hpp"
 #include "nextendo/config.hpp"
 #include "nextendo/hosts.hpp"
+#include "nextendo/gamedata.hpp"
 #include "nextendo/news.hpp"
 #include "nextendo/users.hpp"
 
@@ -249,6 +250,18 @@ void MainScreen::showDiagnostics() {
     postBtn->setTextColour(theme::Text);
     content->addElement(postBtn);
     cy += 84;
+
+    // Lists the installed games' BCAT (game data delivery) settings on the SD card: which games use it.
+    auto *gameBtn = new Aether::BorderButton(kContentX, cy, 260, 60, 3, "Game data", 24, [this]() {
+        std::string err;
+        int total = 0;
+        int n = nextendo::gamedata::dump(total, err);
+        showInfo(n < 0 ? "Could not read the games: " + err
+                       : std::to_string(n) + " of " + std::to_string(total) +
+                             " game(s) use BCAT data. List in sd:/switch/nextendo-nx/bcat/titles.txt");
+    });
+    gameBtn->setTextColour(theme::Text);
+    content->addElement(gameBtn);
 
     // Removes all news from the console (Nintendo's notices too), after a confirmation.
     auto *clearBtn = new Aether::BorderButton(kContentX + 280, cy, 250, 60, 3, "Clear news", 24, [this]() {

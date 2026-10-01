@@ -3,6 +3,8 @@
 - **No way to see or add console news**: Diagnostics → Dump / Post / Clear news (local news, no network).
 - **No news after Clear news**: clearing dropped the channel subscriptions; Clear news now subscribes the default
   channels again, and **Subscribe** (a diagnostic) subscribes them and asks for them now.
+- **No way to see which games use BCAT data**: Diagnostics → Game data writes each installed game's BCAT settings
+  to the SD card.
 - **Message boxes**: a separator line between the text and the buttons.
 - **Crash on closing a message box** (e.g. Clear news): a closed box was freed while the Window and its button's
   callback still used it; it is now freed a frame later, and actions that swap a box or rebuild a pane run after
