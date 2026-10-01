@@ -48,10 +48,17 @@ int dump(int &total, std::string &err) {
                 continue;
             }
             const NacpStruct &nacp = data->nacp;
-            const char *name = "?";
+            // The control name is a fixed buffer, not always NUL-terminated and sometimes not valid text:
+            // take the first entry that is printable ASCII, trimmed to its buffer.
+            char name[sizeof nacp.lang[0].name + 1] = "?";
             for (const NacpLanguageEntry &e : nacp.lang) {
-                if (e.name[0]) {
-                    name = e.name;
+                const size_t len = strnlen(e.name, sizeof e.name);
+                bool printable = len > 0;
+                for (size_t k = 0; k < len; k++)
+                    printable = printable && (unsigned char)e.name[k] >= 0x20 && (unsigned char)e.name[k] < 0x7f;
+                if (printable) {
+                    std::memcpy(name, e.name, len);
+                    name[len] = '\0';
                     break;
                 }
             }

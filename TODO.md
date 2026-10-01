@@ -2,9 +2,8 @@
 
 ## In progress
 
-- **Game data** (Diagnostics): lists every installed game's BCAT settings in `sd:/switch/nextendo-nx/bcat/`
-  (`titles.txt`; `passphrases.txt` holds the games' own BCAT keys: keep it on the card). Run it and read which
-  games use BCAT (Diablo III first).
+- **Game data** (Diagnostics): working; lists each installed game's BCAT settings to `sd:/switch/nextendo-nx/bcat/`.
+  The garbled-name display is fixed (prints a name only when it is printable ASCII).
 - **Users → Unlink**: test on the half-linked users (unlink, reboot, delete in System Settings).
 
 ## Left
